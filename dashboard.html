@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出荷調整品 LINEアラート</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/2.2.0/encoding.min.js"></script>
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- ヘッダー -->
+  <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </div>
+      <p class="text-sm font-bold text-gray-900">出荷調整品 LINEアラート</p>
+    </div>
+  </header>
+
+  <!-- タブ -->
+  <div class="bg-white border-b border-gray-200 px-6">
+    <nav class="flex gap-0">
+      <button onclick="switchTab('today')" id="tab-today"
+        class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-gray-900 text-gray-900 -mb-px">
+        今日の変化
+      </button>
+      <button onclick="switchTab('order')" id="tab-order"
+        class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-800 -mb-px">
+        要発注<span id="tab-order-badge" class="hidden ml-1 text-xs font-bold text-white bg-red-500 px-1.5 py-0.5 rounded-full"></span>
+      </button>
+      <button onclick="switchTab('items')" id="tab-items"
+        class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-800 -mb-px">
+        全品目一覧
+      </button>
+      <button onclick="switchTab('import')" id="tab-import"
+        class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-800 -mb-px">
+        CSVインポート
+      </button>
+    </nav>
+  </div>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+
+    <!-- ===== 今日の変化 ===== -->
+    <div id="tab-content-today">
+      <div id="today-loading" class="text-center py-12 text-sm text-gray-400">読み込み中...</div>
+
+      <div id="today-empty" class="hidden text-center py-16">
+        <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <p class="text-base font-semibold text-gray-700">本日の変化はありません</p>
+        <p class="text-sm text-gray-400 mt-1">登録品目に影響のある出荷調整の変化は検出されませんでした</p>
+      </div>
+
+      <div id="today-content" class="hidden">
+        <!-- サマリーカード -->
+        <div id="today-summary" class="grid grid-cols-3 gap-3 mb-6"></div>
+        <!-- 変化カード -->
+        <div id="today-cards" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- ===== 要発注 ===== -->
+    <div id="tab-content-order" class="hidden">
+      <div id="order-loading" class="text-center py-12 text-sm text-gray-400">読み込み中...</div>
+
+      <div id="order-empty" class="hidden text-center py-16">
+        <div class="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <p class="text-base font-semibold text-gray-700">発注が必要な品目はありません</p>
+        <p class="text-sm text-gray-400 mt-1">出荷調整中で在庫が逼迫している品目は現在ありません</p>
+      </div>
+
+      <div id="order-content" class="hidden">
+        <div id="order-summary" class="grid grid-cols-2 gap-3 mb-6"></div>
+        <div id="order-cards" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- ===== 全品目一覧 ===== -->
+    <div id="tab-content-items" class="hidden">
+      <div id="items-loading" class="text-center py-12 text-sm text-gray-400">読み込み中...</div>
+
+      <div id="items-content" class="hidden">
+        <!-- サマリー -->
+        <div id="items-summary" class="grid grid-cols-3 gap-3 mb-5"></div>
+
+        <!-- フィルター -->
+        <div class="flex items-center gap-3 mb-4">
+          <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+            </svg>
+            <input type="text" id="items-search" placeholder="品目名で検索"
+              class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-200">
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-600 whitespace-nowrap">
+            <input type="checkbox" id="items-filter-shortage" class="accent-gray-900 w-4 h-4" />
+            出荷調整中のみ
+          </label>
+        </div>
+
+        <!-- リスト -->
+        <div id="items-list" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-4 text-xs font-medium text-gray-400">
+            <span class="flex-1">品目名</span>
+            <span class="w-36 text-center hidden sm:block">YJコード</span>
+            <span class="w-28 text-center">状態</span>
+          </div>
+          <div id="items-rows" class="divide-y divide-gray-100"></div>
+          <div id="items-footer" class="px-4 py-3 border-t border-gray-100 bg-gray-50 text-xs text-gray-400"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CSVインポート ===== -->
+    <div id="tab-content-import" class="hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 pt-6 pb-4">
+          <h1 class="text-lg font-bold text-gray-900">CSVファイルをインポート</h1>
+          <p class="text-sm text-gray-500 mt-1">レセコンや在庫管理ソフトから出力したCSVをそのまま取り込めます</p>
+        </div>
+
+        <!-- ドロップエリア -->
+        <div class="px-6 pb-4">
+          <div id="drop-zone"
+            class="relative border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50">
+            <input type="file" id="file-input" accept=".csv,.txt,.tsv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div id="drop-idle">
+              <div class="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+              </div>
+              <p class="text-sm font-semibold text-gray-700">CSVファイルをここにドラッグ＆ドロップ</p>
+              <p class="text-xs text-gray-400 mt-1">または クリックしてファイルを選択</p>
+            </div>
+            <div id="drop-hover" class="hidden">
+              <div class="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                </svg>
+              </div>
+              <p class="text-sm font-semibold text-blue-600">ここにドロップしてください</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- マッピングUI -->
+        <div id="csv-mapping" class="hidden px-6 pb-4 space-y-3">
+          <p class="text-xs text-gray-500">CSVから自動で列を判別しました。違っていたらプルダウンで変更してください</p>
+          <div class="flex items-center gap-3">
+            <span class="w-24 text-xs font-semibold text-gray-900 bg-blue-100 px-2 py-1 rounded">品目名</span>
+            <select id="select-name" class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"></select>
+            <span id="badge-name" class="text-xs text-green-600 font-medium hidden">自動検出</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="w-24 text-xs font-semibold text-gray-900 bg-purple-100 px-2 py-1 rounded">YJコード</span>
+            <select id="select-yj" class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"></select>
+            <span id="badge-yj" class="text-xs text-green-600 font-medium hidden">自動検出</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="w-24 text-xs font-semibold text-gray-900 bg-emerald-100 px-2 py-1 rounded">在庫数</span>
+            <select id="select-stock" class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"></select>
+            <span id="badge-stock" class="text-xs text-green-600 font-medium hidden">自動検出</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="w-24 text-xs font-semibold text-gray-900 bg-amber-100 px-2 py-1 rounded">出庫数（月間）</span>
+            <select id="select-usage" class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"></select>
+            <span id="badge-usage" class="text-xs text-green-600 font-medium hidden">自動検出</span>
+          </div>
+          <div class="border border-gray-200 rounded-lg overflow-hidden bg-white mt-2">
+            <table class="w-full text-xs">
+              <thead><tr class="bg-gray-100"><th class="text-left px-3 py-2 text-gray-500">品目名</th><th class="text-left px-3 py-2 text-gray-500">YJコード</th><th class="text-right px-3 py-2 text-gray-500">在庫数</th><th class="text-right px-3 py-2 text-gray-500">出庫数</th></tr></thead>
+              <tbody id="csv-preview"></tbody>
+            </table>
+          </div>
+          <p id="csv-preview-note" class="text-xs text-gray-400"></p>
+        </div>
+
+        <!-- モード & ボタン -->
+        <div id="csv-action" class="hidden px-6 pb-6">
+          <div class="flex items-center gap-4 mb-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="mode" value="replace" checked class="accent-gray-900" />
+              <span class="text-sm text-gray-700">既存データを入れ替える</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="mode" value="append" class="accent-gray-900" />
+              <span class="text-sm text-gray-700">既存データに追加する</span>
+            </label>
+          </div>
+          <button id="upload-btn"
+            class="w-full py-3 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            スプレッドシートに登録する
+          </button>
+        </div>
+
+        <!-- 結果 -->
+        <div id="csv-result" class="hidden px-6 pb-6">
+          <div id="csv-success" class="hidden bg-green-50 border border-green-200 rounded-xl p-5 text-center">
+            <div class="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-green-800" id="csv-result-msg"></p>
+            <p class="text-xs text-green-600 mt-1" id="csv-result-detail"></p>
+          </div>
+          <div id="csv-error" class="hidden bg-red-50 border border-red-200 rounded-xl p-5 text-center">
+            <p class="text-sm font-semibold text-red-800" id="csv-error-msg"></p>
+          </div>
+          <button id="csv-retry" class="mt-4 w-full py-2.5 border border-gray-200 text-sm text-gray-600 rounded-xl hover:bg-gray-50">別のCSVをインポートする</button>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 px-6 py-5">
+        <h2 class="text-sm font-bold text-gray-900 mb-3">対応するCSVの形式</h2>
+        <div class="flex flex-wrap gap-2 text-xs text-gray-600">
+          <span class="bg-gray-100 px-2 py-1 rounded">Shift_JIS / UTF-8</span>
+          <span class="bg-gray-100 px-2 py-1 rounded">カンマ区切り / タブ区切り</span>
+          <span class="bg-gray-100 px-2 py-1 rounded">余分な列があってもOK</span>
+          <span class="bg-gray-100 px-2 py-1 rounded">YJコードなしでもOK</span>
+          <span class="bg-gray-100 px-2 py-1 rounded">在庫数・出庫数も自動検出</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ─── Tab switching ───
+    function switchTab(name) {
+      ["today", "order", "items", "import"].forEach((t) => {
+        const btn = document.getElementById("tab-" + t);
+        const content = document.getElementById("tab-content-" + t);
+        if (t === name) {
+          btn.className = "tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-gray-900 text-gray-900 -mb-px";
+          content.classList.remove("hidden");
+        } else {
+          btn.className = "tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-800 -mb-px";
+          content.classList.add("hidden");
+        }
+      });
+      if (name === "today") loadToday();
+      if (name === "order") loadOrder();
+      if (name === "items") loadItems();
+    }
+
+    function esc(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+
+    // ═══════════════════════════════════════
+    // 今日の変化
+    // ═══════════════════════════════════════
+    let todayLoaded = false;
+    async function loadToday() {
+      if (todayLoaded) return;
+      try {
+        const r = await fetch("/api/today");
+        const data = await r.json();
+        todayLoaded = true;
+
+        document.getElementById("today-loading").classList.add("hidden");
+
+        if (data.total === 0) {
+          document.getElementById("today-empty").classList.remove("hidden");
+          return;
+        }
+
+        document.getElementById("today-content").classList.remove("hidden");
+
+        const summary = document.getElementById("today-summary");
+        summary.innerHTML = `
+          ${summaryCard("新規", data.newCount, "bg-red-50", "text-red-700", "border-red-200")}
+          ${summaryCard("変更", data.changedCount, "bg-amber-50", "text-amber-700", "border-amber-200")}
+          ${summaryCard("解除", data.releasedCount, "bg-emerald-50", "text-emerald-700", "border-emerald-200")}
+        `;
+
+        const cards = document.getElementById("today-cards");
+        cards.innerHTML = data.changes.map((c) => changeCard(c)).join("");
+
+      } catch (err) {
+        document.getElementById("today-loading").textContent = "データの取得に失敗しました";
+      }
+    }
+
+    function summaryCard(label, count, bg, text, border) {
+      return `<div class="rounded-xl border ${border} ${bg} px-4 py-3 text-center">
+        <p class="text-2xl font-bold ${text}">${count}</p>
+        <p class="text-xs ${text} mt-0.5">${label}</p>
+      </div>`;
+    }
+
+    function changeCard(c) {
+      const badgeColors = {
+        "新規": "bg-red-100 text-red-700 border-red-200",
+        "変更": "bg-amber-100 text-amber-700 border-amber-200",
+        "解除": "bg-emerald-100 text-emerald-700 border-emerald-200",
+      };
+      const borderColors = {
+        "新規": "border-l-red-500",
+        "変更": "border-l-amber-500",
+        "解除": "border-l-emerald-500",
+      };
+      const badge = badgeColors[c.type] || "bg-gray-100 text-gray-600";
+      const leftBorder = borderColors[c.type] || "border-l-gray-300";
+
+      let details = "";
+      if (c.type === "解除") {
+        details = `<p class="text-sm text-emerald-600 mt-1">出荷調整が解除されました</p>`;
+      } else {
+        const parts = [];
+        if (c.status) parts.push(`<span class="font-medium">${esc(c.status)}</span>`);
+        if (c.volume) parts.push(`<span class="text-gray-500">${esc(c.volume)}</span>`);
+        if (parts.length) details += `<p class="text-sm mt-1">${parts.join(" / ")}</p>`;
+        if (c.reason) details += `<p class="text-xs text-gray-500 mt-1">理由: ${esc(c.reason)}</p>`;
+        if (c.prospect) details += `<p class="text-xs text-gray-500">見込み: ${esc(c.prospect)}</p>`;
+      }
+
+      return `<div class="bg-white rounded-xl border border-gray-200 border-l-4 ${leftBorder} p-4">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xs font-medium px-2 py-0.5 rounded-full border ${badge}">${esc(c.type)}</span>
+        </div>
+        <p class="text-sm font-bold text-gray-900 mt-1">${esc(c.drugName)}</p>
+        ${details}
+      </div>`;
+    }
+
+    loadToday();
+
+    // ═══════════════════════════════════════
+    // 要発注
+    // ═══════════════════════════════════════
+    let allItemsData = null;
+    let orderLoaded = false;
+
+    async function loadOrder() {
+      if (orderLoaded) return;
+      try {
+        if (!allItemsData) {
+          const r = await fetch("/api/items");
+          allItemsData = await r.json();
+        }
+        orderLoaded = true;
+
+        document.getElementById("order-loading").classList.add("hidden");
+
+        const orderItems = allItemsData.items.filter(
+          (i) => i.urgency === "critical" || i.urgency === "warning"
+        );
+
+        updateOrderBadge(orderItems.length);
+
+        if (orderItems.length === 0) {
+          document.getElementById("order-empty").classList.remove("hidden");
+          return;
+        }
+
+        document.getElementById("order-content").classList.remove("hidden");
+
+        const criticalItems = orderItems.filter((i) => i.urgency === "critical");
+        const warningItems = orderItems.filter((i) => i.urgency === "warning");
+
+        const summary = document.getElementById("order-summary");
+        summary.innerHTML = `
+          <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+            <p class="text-3xl font-bold text-red-700">${criticalItems.length}</p>
+            <p class="text-xs font-medium text-red-600 mt-0.5">すぐ発注</p>
+            <p class="text-xs text-red-400 mt-0.5">在庫7日以内</p>
+          </div>
+          <div class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <p class="text-3xl font-bold text-amber-700">${warningItems.length}</p>
+            <p class="text-xs font-medium text-amber-600 mt-0.5">早めに検討</p>
+            <p class="text-xs text-amber-400 mt-0.5">在庫14日以内</p>
+          </div>
+        `;
+
+        const sorted = [...criticalItems, ...warningItems];
+        const cards = document.getElementById("order-cards");
+        cards.innerHTML = sorted.map((item) => orderCard(item)).join("");
+
+      } catch (err) {
+        document.getElementById("order-loading").textContent = "データの取得に失敗しました";
+      }
+    }
+
+    function updateOrderBadge(count) {
+      const badge = document.getElementById("tab-order-badge");
+      if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
+
+    function orderCard(item) {
+      const isCritical = item.urgency === "critical";
+      const borderColor = isCritical ? "border-l-red-500" : "border-l-amber-400";
+      const bgColor = isCritical ? "bg-red-50" : "bg-amber-50/50";
+      const levelBadge = isCritical
+        ? `<span class="text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded">すぐ発注</span>`
+        : `<span class="text-xs font-bold text-amber-800 bg-amber-200 px-2 py-0.5 rounded">早めに検討</span>`;
+
+      const statusBadge = {
+        stopped: `<span class="inline-flex items-center gap-1 text-xs font-medium bg-red-100 text-red-600 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>${esc(item.statusLabel)}</span>`,
+        limited: `<span class="inline-flex items-center gap-1 text-xs font-medium bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>${esc(item.statusLabel)}</span>`,
+      };
+
+      let daysBlock = "";
+      if (item.stockDays !== null) {
+        const daysColor = isCritical ? "text-red-700" : "text-amber-700";
+        daysBlock = `
+          <div class="text-right">
+            <p class="text-2xl font-bold ${daysColor}">残${item.stockDays}<span class="text-base">日</span></p>
+            <p class="text-xs text-gray-400 mt-0.5">在庫${item.stock}個 / 月${item.monthlyUsage}個</p>
+          </div>`;
+      } else if (item.stock !== null) {
+        const stockColor = isCritical ? "text-red-700" : "text-amber-700";
+        daysBlock = `
+          <div class="text-right">
+            <p class="text-2xl font-bold ${stockColor}">${item.stock}<span class="text-base">個</span></p>
+            <p class="text-xs text-gray-400 mt-0.5">出庫データなし</p>
+          </div>`;
+      }
+
+      return `<div class="${bgColor} rounded-xl border border-gray-200 border-l-4 ${borderColor} p-4">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1.5">
+              ${levelBadge}
+              ${statusBadge[item.shortageStatus] || ""}
+            </div>
+            <p class="text-sm font-bold text-gray-900 truncate">${esc(item.name)}</p>
+          </div>
+          ${daysBlock}
+        </div>
+      </div>`;
+    }
+
+    // ページ初回読み込み時にタブバッジを更新
+    (async () => {
+      try {
+        if (!allItemsData) {
+          const r = await fetch("/api/items");
+          allItemsData = await r.json();
+        }
+        const count = allItemsData.items.filter(
+          (i) => i.urgency === "critical" || i.urgency === "warning"
+        ).length;
+        updateOrderBadge(count);
+      } catch {}
+    })();
+
+    // ═══════════════════════════════════════
+    // 全品目一覧
+    // ═══════════════════════════════════════
+    async function loadItems() {
+      if (!allItemsData) {
+        try {
+          const r = await fetch("/api/items");
+          allItemsData = await r.json();
+        } catch {
+          document.getElementById("items-loading").textContent = "データの取得に失敗しました";
+          return;
+        }
+      }
+      document.getElementById("items-loading").classList.add("hidden");
+      document.getElementById("items-content").classList.remove("hidden");
+      renderItems();
+    }
+
+    function renderItems() {
+      if (!allItemsData) return;
+
+      const search = (document.getElementById("items-search").value || "").trim().toLowerCase();
+      const shortageOnly = document.getElementById("items-filter-shortage").checked;
+
+      let filtered = allItemsData.items;
+      if (search) filtered = filtered.filter((i) => i.name.toLowerCase().includes(search));
+      if (shortageOnly) filtered = filtered.filter((i) => i.shortageStatus !== "normal");
+
+      const statusOrder = { stopped: 0, limited: 1, normal: 2 };
+      filtered.sort((a, b) => (statusOrder[a.shortageStatus] ?? 9) - (statusOrder[b.shortageStatus] ?? 9));
+
+      const summary = document.getElementById("items-summary");
+      summary.innerHTML = `
+        ${summaryCard("供給停止", allItemsData.stoppedCount, "bg-red-50", "text-red-700", "border-red-200")}
+        ${summaryCard("限定出荷", allItemsData.limitedCount, "bg-amber-50", "text-amber-700", "border-amber-200")}
+        ${summaryCard("正常出荷", allItemsData.normalCount, "bg-emerald-50", "text-emerald-700", "border-emerald-200")}
+      `;
+
+      const rows = document.getElementById("items-rows");
+      if (filtered.length === 0) {
+        rows.innerHTML = `<div class="px-4 py-8 text-center text-sm text-gray-400">該当する品目がありません</div>`;
+      } else {
+        rows.innerHTML = filtered.map((item) => itemRow(item)).join("");
+      }
+
+      document.getElementById("items-footer").textContent =
+        `${filtered.length}件表示 / 全${allItemsData.total}件登録`;
+    }
+
+    function itemRow(item) {
+      const statusBadge = {
+        stopped: `<span class="inline-flex items-center gap-1 text-xs font-medium bg-red-100 text-red-600 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>${esc(item.statusLabel)}</span>`,
+        limited: `<span class="inline-flex items-center gap-1 text-xs font-medium bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>${esc(item.statusLabel)}</span>`,
+        normal:  `<span class="inline-flex items-center gap-1 text-xs font-medium bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>正常出荷</span>`,
+      };
+
+      let changeBadge = "";
+      if (item.changeType) {
+        const cbColors = { "新規": "bg-red-500", "変更": "bg-amber-500", "解除": "bg-emerald-500" };
+        changeBadge = `<span class="ml-1.5 text-xs font-bold text-white ${cbColors[item.changeType] || "bg-gray-500"} px-1.5 py-0.5 rounded">${item.changeType}</span>`;
+      }
+
+      return `<div class="px-4 py-3 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900 truncate">${esc(item.name)}${changeBadge}</p>
+        </div>
+        <span class="w-36 text-center text-xs text-gray-400 font-mono hidden sm:block truncate">${esc(item.yjCode || "—")}</span>
+        <span class="w-28 text-center flex-shrink-0">${statusBadge[item.shortageStatus]}</span>
+      </div>`;
+    }
+
+    document.getElementById("items-search").addEventListener("input", renderItems);
+    document.getElementById("items-filter-shortage").addEventListener("change", renderItems);
+
+    // ═══════════════════════════════════════
+    // CSVインポート（upload.htmlから移植）
+    // ═══════════════════════════════════════
+    let csvText = "";
+    let csvHeaders = [];
+    let csvRows = [];
+
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("border-blue-400", "bg-blue-50");
+      document.getElementById("drop-idle").classList.add("hidden");
+      document.getElementById("drop-hover").classList.remove("hidden");
+    });
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("border-blue-400", "bg-blue-50");
+      document.getElementById("drop-idle").classList.remove("hidden");
+      document.getElementById("drop-hover").classList.add("hidden");
+    });
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("border-blue-400", "bg-blue-50");
+      document.getElementById("drop-idle").classList.remove("hidden");
+      document.getElementById("drop-hover").classList.add("hidden");
+      if (e.dataTransfer.files[0]) handleCsvFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleCsvFile(fileInput.files[0]); });
+
+    function handleCsvFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const uint8 = new Uint8Array(reader.result);
+        const detected = Encoding.detect(uint8);
+        const uni = Encoding.convert(uint8, { to: "UNICODE", from: detected });
+        csvText = Encoding.codeToString(uni).replace(/^\uFEFF/, "");
+        parseCsvAndDetect();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseCsvAndDetect() {
+      const lines = csvText.split(/\r?\n/).filter((l) => l.trim());
+      if (lines.length < 2) { alert("CSVにデータ行がありません"); return; }
+      const sep = lines[0].includes("\t") ? "\t" : ",";
+      const parse = (l) => l.split(sep).map((v) => v.trim().replace(/^"|"$/g, ""));
+      csvHeaders = parse(lines[0]);
+      csvRows = lines.slice(1).map(parse).filter((r) => r.some((v) => v));
+
+      const yjPat = /^\d{7}[A-Z]\d{4}$/;
+      const scores = csvHeaders.map((_, ci) => {
+        let yj = 0, drug = 0;
+        csvRows.slice(0, 30).forEach((r) => {
+          const v = (r[ci] || "").trim();
+          if (yjPat.test(v)) yj++;
+          if (/[錠散顆粒カプセルシロップ軟膏クリームローションテープ点眼点鼻吸入注射]/.test(v) || /\d+\s*mg/.test(v) || /「.+」/.test(v)) drug++;
+        });
+        return { ci, yj, drug };
+      });
+
+      let yjIdx = -1, nameIdx = -1, stockIdx = -1, usageIdx = -1;
+      const yjBest = scores.reduce((a, b) => b.yj > a.yj ? b : a, { yj: 0 });
+      if (yjBest.yj >= 2) yjIdx = yjBest.ci;
+      if (yjIdx < 0) { for (const n of ["YJコード","YJ薬価コード","YJ","薬価コード"]) { const i = csvHeaders.findIndex((h) => h.includes(n)); if (i >= 0) { yjIdx = i; break; } } }
+      const nameBest = scores.filter((s) => s.ci !== yjIdx).reduce((a, b) => b.drug > a.drug ? b : a, { drug: 0 });
+      if (nameBest.drug >= 2) nameIdx = nameBest.ci;
+      if (nameIdx < 0) { for (const n of ["品目名","品名","医薬品名称","薬品名","名称"]) { const i = csvHeaders.findIndex((h) => h === n || h.includes(n)); if (i >= 0) { nameIdx = i; break; } } }
+
+      const usedCols = new Set([nameIdx, yjIdx].filter((x) => x >= 0));
+      for (const n of ["在庫数","在庫","現在庫","数量","在庫量"]) {
+        const i = csvHeaders.findIndex((h, ci) => !usedCols.has(ci) && (h === n || h.includes(n)));
+        if (i >= 0) { stockIdx = i; break; }
+      }
+      if (stockIdx < 0) {
+        const numScores = csvHeaders.map((_, ci) => {
+          if (usedCols.has(ci)) return { ci, count: -1 };
+          let count = 0;
+          csvRows.slice(0, 30).forEach((r) => { if (/^\d+(\.\d+)?$/.test((r[ci] || "").trim())) count++; });
+          return { ci, count };
+        });
+        const best = numScores.reduce((a, b) => b.count > a.count ? b : a, { count: 0 });
+        if (best.count >= Math.min(csvRows.length, 30) * 0.5) stockIdx = best.ci;
+      }
+
+      const usedCols2 = new Set([nameIdx, yjIdx, stockIdx].filter((x) => x >= 0));
+      for (const n of ["出庫数","払出数","使用量","消費量","月間出庫数","出庫","払出"]) {
+        const i = csvHeaders.findIndex((h, ci) => !usedCols2.has(ci) && (h === n || h.includes(n)));
+        if (i >= 0) { usageIdx = i; break; }
+      }
+
+      const selName = document.getElementById("select-name");
+      const selYj = document.getElementById("select-yj");
+      const selStock = document.getElementById("select-stock");
+      const selUsage = document.getElementById("select-usage");
+      selName.innerHTML = ""; selYj.innerHTML = "<option value='-1'>（なし）</option>";
+      selStock.innerHTML = "<option value='-1'>（なし）</option>";
+      selUsage.innerHTML = "<option value='-1'>（なし）</option>";
+      csvHeaders.forEach((h, i) => {
+        const sample = csvRows[0] && csvRows[0][i] ? ` — 例: ${csvRows[0][i].substring(0, 20)}` : "";
+        selName.innerHTML += `<option value="${i}" ${i === nameIdx ? "selected" : ""}>${h}${sample}</option>`;
+        selYj.innerHTML += `<option value="${i}" ${i === yjIdx ? "selected" : ""}>${h}${sample}</option>`;
+        selStock.innerHTML += `<option value="${i}" ${i === stockIdx ? "selected" : ""}>${h}${sample}</option>`;
+        selUsage.innerHTML += `<option value="${i}" ${i === usageIdx ? "selected" : ""}>${h}${sample}</option>`;
+      });
+      if (nameIdx < 0) selName.insertAdjacentHTML("afterbegin", `<option value="-1" selected disabled>（品目名の列を選択）</option>`);
+
+      document.getElementById("badge-name").classList.toggle("hidden", nameIdx < 0);
+      document.getElementById("badge-yj").classList.toggle("hidden", yjIdx < 0);
+      document.getElementById("badge-stock").classList.toggle("hidden", stockIdx < 0);
+      document.getElementById("badge-usage").classList.toggle("hidden", usageIdx < 0);
+
+      updateCsvPreview();
+      selName.addEventListener("change", updateCsvPreview);
+      selYj.addEventListener("change", updateCsvPreview);
+      selStock.addEventListener("change", updateCsvPreview);
+      selUsage.addEventListener("change", updateCsvPreview);
+
+      dropZone.classList.add("hidden");
+      document.getElementById("csv-mapping").classList.remove("hidden");
+      document.getElementById("csv-action").classList.remove("hidden");
+      document.getElementById("csv-result").classList.add("hidden");
+    }
+
+    function updateCsvPreview() {
+      const ni = parseInt(document.getElementById("select-name").value);
+      const yi = parseInt(document.getElementById("select-yj").value);
+      const si = parseInt(document.getElementById("select-stock").value);
+      const ui = parseInt(document.getElementById("select-usage").value);
+      const tbody = document.getElementById("csv-preview");
+      tbody.innerHTML = "";
+      csvRows.slice(0, 5).forEach((r) => {
+        tbody.innerHTML += `<tr class="border-t border-gray-100"><td class="px-3 py-2 text-gray-900 text-xs">${esc(ni >= 0 ? r[ni] || "" : "—")}</td><td class="px-3 py-2 text-gray-500 text-xs font-mono">${esc(yi >= 0 ? r[yi] || "—" : "—")}</td><td class="px-3 py-2 text-right text-gray-700 text-xs">${esc(si >= 0 ? r[si] || "—" : "—")}</td><td class="px-3 py-2 text-right text-gray-700 text-xs">${esc(ui >= 0 ? r[ui] || "—" : "—")}</td></tr>`;
+      });
+      document.getElementById("csv-preview-note").textContent = csvRows.length > 5 ? `先頭5件（全${csvRows.length}件）` : `${csvRows.length}件`;
+      document.getElementById("upload-btn").disabled = ni < 0;
+    }
+
+    document.getElementById("upload-btn").addEventListener("click", async () => {
+      const ni = parseInt(document.getElementById("select-name").value);
+      const yi = parseInt(document.getElementById("select-yj").value);
+      const si = parseInt(document.getElementById("select-stock").value);
+      const ui = parseInt(document.getElementById("select-usage").value);
+      if (ni < 0) return;
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      const btn = document.getElementById("upload-btn");
+      btn.disabled = true; btn.textContent = "登録中…";
+
+      const lines = ["品目名,YJコード,在庫数,月間出庫数"];
+      csvRows.forEach((r) => {
+        const n = (r[ni] || "").trim();
+        if (!n) return;
+        const yj = yi >= 0 ? (r[yi] || "").trim() : "";
+        const stock = si >= 0 ? (r[si] || "").trim() : "";
+        const usage = ui >= 0 ? (r[ui] || "").trim() : "";
+        lines.push(`"${n}","${yj}","${stock}","${usage}"`);
+      });
+
+      try {
+        const res = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csvText: lines.join("\n"), mode }) });
+        const data = await res.json();
+        document.getElementById("csv-mapping").classList.add("hidden");
+        document.getElementById("csv-action").classList.add("hidden");
+        document.getElementById("csv-result").classList.remove("hidden");
+        if (data.success) {
+          document.getElementById("csv-success").classList.remove("hidden");
+          document.getElementById("csv-error").classList.add("hidden");
+          document.getElementById("csv-result-msg").textContent = `${data.imported}件の品目を登録しました`;
+          document.getElementById("csv-result-detail").textContent = `在庫品目数: ${data.total}件`;
+          allItemsData = null;
+          orderLoaded = false;
+        } else {
+          document.getElementById("csv-success").classList.add("hidden");
+          document.getElementById("csv-error").classList.remove("hidden");
+          document.getElementById("csv-error-msg").textContent = data.error;
+        }
+      } catch (err) {
+        document.getElementById("csv-mapping").classList.add("hidden");
+        document.getElementById("csv-action").classList.add("hidden");
+        document.getElementById("csv-result").classList.remove("hidden");
+        document.getElementById("csv-success").classList.add("hidden");
+        document.getElementById("csv-error").classList.remove("hidden");
+        document.getElementById("csv-error-msg").textContent = "通信エラー: " + err.message;
+      }
+      btn.disabled = false; btn.textContent = "スプレッドシートに登録する";
+    });
+
+    document.getElementById("csv-retry").addEventListener("click", () => {
+      csvText = ""; csvHeaders = []; csvRows = []; fileInput.value = "";
+      dropZone.classList.remove("hidden");
+      document.getElementById("csv-mapping").classList.add("hidden");
+      document.getElementById("csv-action").classList.add("hidden");
+      document.getElementById("csv-result").classList.add("hidden");
+    });
+  </script>
+</body>
+</html>

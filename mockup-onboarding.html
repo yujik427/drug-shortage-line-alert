@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出荷調整品 LINEアラート — はじめかた</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-xl bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+    <!-- フェーズインジケーター -->
+    <div class="px-6 pt-6 pb-0">
+      <div class="flex items-center gap-1.5 mb-4">
+        <div id="dot-1" class="w-2.5 h-2.5 rounded-full bg-gray-800 transition-colors duration-300"></div>
+        <div id="dot-2" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-colors duration-300"></div>
+        <div id="dot-3" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-colors duration-300"></div>
+        <span id="phase-label" class="ml-2 text-sm text-gray-500">フェーズ 1 / 3</span>
+      </div>
+    </div>
+
+    <!-- ===== フェーズ 1 ===== -->
+    <div id="phase-1" class="phase-content px-6 pb-6">
+      <div class="inline-flex items-center bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-1 rounded-full mb-5">
+        セットアップ（初回のみ・約5分）
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-6">在庫品目を登録して<br>Botを招待する</h2>
+
+      <ol class="space-y-5">
+        <li class="flex gap-4">
+          <div class="flex-shrink-0 w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold flex items-center justify-center mt-0.5">1</div>
+          <div>
+            <p class="font-semibold text-gray-900">薬局アカウントを作成</p>
+            <p class="text-sm text-gray-500 mt-0.5">メールアドレスのみ。カード登録不要。30日間無料。</p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <div class="flex-shrink-0 w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold flex items-center justify-center mt-0.5">2</div>
+          <div>
+            <p class="font-semibold text-gray-900">在庫品目を登録</p>
+            <p class="text-sm text-gray-500 mt-0.5">CSVで一括アップロード or 管理画面から手動追加。品目数制限なし。</p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <div class="flex-shrink-0 w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold flex items-center justify-center mt-0.5">3</div>
+          <div>
+            <p class="font-semibold text-gray-900">Bot招待リンクをチームLINEグループに送る</p>
+            <p class="text-sm text-gray-500 mt-0.5">管理画面からリンクをコピー → 既存グループに貼るだけ。</p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <div class="flex-shrink-0 w-7 h-7 rounded-full bg-green-600 text-white flex items-center justify-center mt-0.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold text-gray-900">完了一以降は何もしなくていい</p>
+            <p class="text-sm text-gray-500 mt-0.5">毎朝7:00 に自動収集・突合が稼働し続けます。</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <!-- ===== フェーズ 2 ===== -->
+    <div id="phase-2" class="phase-content hidden px-6 pb-6">
+      <div class="inline-flex items-center bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full mb-5">
+        毎朝の使い方（変化なしの日）
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-5">LINEグループを<br>開くだけ</h2>
+
+      <div class="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+        <p class="text-sm text-gray-700">Bot通知の有無が今日のステータスをそのまま伝えます。</p>
+        <p class="text-sm text-gray-500">通知がない日 → グループに変化なし</p>
+
+        <!-- LINE風モック -->
+        <div class="bg-white rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-400 italic inline-block">
+          （Botの投稿なし）
+        </div>
+
+        <p class="text-sm text-gray-700 font-medium">= 今日の出荷調整に変化はない</p>
+
+        <div class="border-l-4 border-green-400 bg-green-50 pl-3 py-2 rounded-r-lg">
+          <p class="text-sm text-gray-700">「Botが沈黙している」こと自体が「今日は安全」という情報です。<br>能動的に確認しに行く必要がなくなります。</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-gray-600">担当者が休みでも、チーム全員が同じタイミングで同じ情報を持てます。</p>
+    </div>
+
+    <!-- ===== フェーズ 3 ===== -->
+    <div id="phase-3" class="phase-content hidden px-6 pb-6">
+      <div class="inline-flex items-center bg-amber-100 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full mb-5">
+        通知が届いた日
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-5">Botがチームに<br>変化を届ける</h2>
+
+      <div class="bg-gray-50 rounded-xl p-4 mb-4">
+        <p class="text-xs text-gray-400 mb-3">Botがグループに自動投稿する通知イメージ</p>
+
+        <!-- LINE通知モック -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4 text-sm space-y-2">
+          <p class="font-bold text-gray-900">🔔 本日の出荷調整変更 2件</p>
+          <div class="pt-1 space-y-2">
+            <div class="border-l-2 border-red-400 pl-2">
+              <p class="text-xs font-semibold text-red-600">【新規】</p>
+              <p class="text-sm text-gray-800">アムロジピン錠5mg「XX社」<br>出荷調整対象となりました</p>
+            </div>
+            <div class="border-l-2 border-green-400 pl-2">
+              <p class="text-xs font-semibold text-green-600">【解除】</p>
+              <p class="text-sm text-gray-800">メトホルミン錠250mg「YY」<br>出荷調整が解除されました</p>
+            </div>
+          </div>
+          <p class="text-xs text-blue-500 pt-1">詳細 → [情報元リンク]</p>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4">
+        <div class="flex-shrink-0 w-7 h-7 rounded-full bg-gray-900 text-white flex items-center justify-center mt-0.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <p class="text-sm text-gray-600">通知内容を確認し、発注量・代替薬の検討へ。チームは全員同時に情報を受け取っています。</p>
+      </div>
+    </div>
+
+    <!-- ナビゲーション -->
+    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+      <button id="btn-prev" onclick="changePage(-1)"
+        class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        disabled>
+        ← 前へ
+      </button>
+      <button id="btn-next" onclick="changePage(1)"
+        class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 transition-colors">
+        次へ →
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let current = 1;
+    const total = 3;
+
+    function changePage(dir) {
+      document.getElementById('phase-' + current).classList.add('hidden');
+      current = Math.max(1, Math.min(total, current + dir));
+      document.getElementById('phase-' + current).classList.remove('hidden');
+
+      // ドット更新
+      for (let i = 1; i <= total; i++) {
+        document.getElementById('dot-' + i).className = 'w-2.5 h-2.5 rounded-full transition-colors duration-300 ' + (i === current ? 'bg-gray-800' : 'bg-gray-300');
+      }
+      document.getElementById('phase-label').textContent = 'フェーズ ' + current + ' / ' + total;
+
+      // ボタン制御
+      document.getElementById('btn-prev').disabled = current === 1;
+      document.getElementById('btn-next').textContent = current === total ? '管理画面へ →' : '次へ →';
+    }
+  </script>
+
+</body>
+</html>

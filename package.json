@@ -1,0 +1,22 @@
+{
+  "name": "drug-shortage-line-alert",
+  "version": "1.0.0",
+  "description": "出荷調整品の変化を自動検知しLINEグループに通知するサービス",
+  "type": "module",
+  "scripts": {
+    "auth": "node auth-google.mjs",
+    "init": "node tools/init-spreadsheet.mjs",
+    "collect": "node jobs/collect.mjs",
+    "notify": "node jobs/notify.mjs",
+    "start": "node scheduler.mjs",
+    "import": "node tools/import-csv.mjs",
+    "upload": "node tools/upload-server.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "googleapis": "^148.0.0",
+    "node-cron": "^4.2.1",
+    "open": "^11.0.0",
+    "xlsx": "^0.18.5"
+  }
+}

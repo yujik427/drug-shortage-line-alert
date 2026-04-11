@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出荷調整品 LINEアラート — 管理画面</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- ヘッダー -->
+  <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-900">出荷調整品 LINEアラート</p>
+        <p class="text-xs text-gray-400">さくら薬局 本店</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+        無料トライアル中（残23日）
+      </span>
+      <button class="text-sm text-gray-500 hover:text-gray-800">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- タブナビゲーション -->
+  <div class="bg-white border-b border-gray-200 px-6">
+    <nav class="flex gap-0">
+      <button onclick="switchTab('items')" id="tab-items"
+        class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-gray-900 text-gray-900 -mb-px">
+        在庫品目
+      </button>
+      <button onclick="switchTab('bot')" id="tab-bot"
+        class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-800 -mb-px">
+        Bot設定
+      </button>
+      <button onclick="switchTab('history')" id="tab-history"
+        class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-800 -mb-px">
+        通知履歴
+      </button>
+    </nav>
+  </div>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+
+    <!-- ===== タブ: 在庫品目 ===== -->
+    <div id="tab-content-items">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h1 class="text-lg font-bold text-gray-900">在庫品目</h1>
+          <p class="text-sm text-gray-500 mt-0.5">登録した品目が出荷調整対象になったとき、自動でLINEに通知します</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            CSVインポート
+          </button>
+          <button class="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            品目を追加
+          </button>
+        </div>
+      </div>
+
+      <!-- 検索 -->
+      <div class="relative mb-4">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+        </svg>
+        <input type="text" placeholder="品目名・JANコードで検索"
+          class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-200">
+      </div>
+
+      <!-- 品目リスト -->
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-4 text-xs font-medium text-gray-400 uppercase tracking-wide">
+          <span class="flex-1">品目名</span>
+          <span class="w-32 text-center hidden sm:block">JANコード</span>
+          <span class="w-24 text-center">現在の状態</span>
+          <span class="w-16"></span>
+        </div>
+
+        <!-- 品目行 -->
+        <div class="divide-y divide-gray-100">
+
+          <div class="px-4 py-3.5 flex items-center gap-4 hover:bg-gray-50">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900">アムロジピン錠5mg「サワイ」</p>
+              <p class="text-xs text-gray-400 mt-0.5">降圧薬</p>
+            </div>
+            <span class="w-32 text-center text-xs text-gray-400 hidden sm:block">4987286021234</span>
+            <span class="w-24 text-center">
+              <span class="inline-flex items-center gap-1 text-xs font-medium bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>出荷調整中
+              </span>
+            </span>
+            <div class="w-16 flex justify-end">
+              <button class="text-gray-300 hover:text-red-400 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="px-4 py-3.5 flex items-center gap-4 hover:bg-gray-50">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900">メトホルミン錠250mg「トーワ」</p>
+              <p class="text-xs text-gray-400 mt-0.5">糖尿病薬</p>
+            </div>
+            <span class="w-32 text-center text-xs text-gray-400 hidden sm:block">4987286034561</span>
+            <span class="w-24 text-center">
+              <span class="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>正常出荷
+              </span>
+            </span>
+            <div class="w-16 flex justify-end">
+              <button class="text-gray-300 hover:text-red-400 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="px-4 py-3.5 flex items-center gap-4 hover:bg-gray-50">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900">ロスバスタチン錠2.5mg「JG」</p>
+              <p class="text-xs text-gray-400 mt-0.5">脂質異常症薬</p>
+            </div>
+            <span class="w-32 text-center text-xs text-gray-400 hidden sm:block">4987123456789</span>
+            <span class="w-24 text-center">
+              <span class="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>正常出荷
+              </span>
+            </span>
+            <div class="w-16 flex justify-end">
+              <button class="text-gray-300 hover:text-red-400 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="px-4 py-3.5 flex items-center gap-4 hover:bg-gray-50">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900">エソメプラゾールカプセル20mg「明治」</p>
+              <p class="text-xs text-gray-400 mt-0.5">消化器薬</p>
+            </div>
+            <span class="w-32 text-center text-xs text-gray-400 hidden sm:block">—</span>
+            <span class="w-24 text-center">
+              <span class="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>正常出荷
+              </span>
+            </span>
+            <div class="w-16 flex justify-end">
+              <button class="text-gray-300 hover:text-red-400 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
+          <p class="text-xs text-gray-400">4件登録済み · 次回自動収集: 今夜 00:00</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== タブ: Bot設定 ===== -->
+    <div id="tab-content-bot" class="hidden">
+      <h1 class="text-lg font-bold text-gray-900 mb-1">Bot設定</h1>
+      <p class="text-sm text-gray-500 mb-6">LINEグループへのBot招待と、通知の設定を管理します</p>
+
+      <!-- LINE連携ステータス -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-900">LINE連携</p>
+              <p class="text-xs text-gray-400">さくら薬局チームグループ</p>
+            </div>
+          </div>
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>接続済み
+          </span>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+          <p class="text-xs text-gray-500">グループID: C4f93b2a1d8e5...</p>
+          <button class="text-xs text-red-500 hover:text-red-700">連携を解除</button>
+        </div>
+      </div>
+
+      <!-- Bot招待リンク -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4">
+        <h2 class="text-sm font-semibold text-gray-900 mb-1">LINEグループへの招待リンク</h2>
+        <p class="text-xs text-gray-500 mb-3">別のグループにBotを追加したい場合はこのリンクを使います</p>
+        <div class="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-3">
+          <p class="text-xs text-gray-600 font-mono truncate">https://line.me/R/ti/p/@drug-alert-bot</p>
+          <button class="flex-shrink-0 text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg hover:bg-gray-700">コピー</button>
+        </div>
+      </div>
+
+      <!-- 通知設定 -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 class="text-sm font-semibold text-gray-900 mb-4">通知設定</h2>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-800">通知時刻</p>
+              <p class="text-xs text-gray-400 mt-0.5">毎朝の通知送信タイミング</p>
+            </div>
+            <span class="text-sm font-semibold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg">07:00 固定</span>
+          </div>
+          <div class="h-px bg-gray-100"></div>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-800">変化なしの日は通知しない</p>
+              <p class="text-xs text-gray-400 mt-0.5">Botが沈黙＝変化なし、として動作します</p>
+            </div>
+            <div class="w-10 h-6 bg-gray-900 rounded-full relative cursor-default">
+              <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== タブ: 通知履歴 ===== -->
+    <div id="tab-content-history" class="hidden">
+      <h1 class="text-lg font-bold text-gray-900 mb-1">通知履歴</h1>
+      <p class="text-sm text-gray-500 mb-6">過去30日間の通知記録</p>
+
+      <div class="space-y-3">
+
+        <!-- 通知あり -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 text-xs font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                変化あり
+              </span>
+              <span class="text-xs text-gray-400">2026年4月11日（金）07:00</span>
+            </div>
+            <span class="text-xs font-semibold text-gray-700">2件</span>
+          </div>
+          <div class="space-y-1.5 text-sm">
+            <p class="text-gray-700"><span class="text-red-500 font-medium">【新規】</span> アムロジピン錠5mg「XX社」— 出荷調整対象</p>
+            <p class="text-gray-700"><span class="text-green-600 font-medium">【解除】</span> メトホルミン錠250mg「YY」— 解除</p>
+          </div>
+        </div>
+
+        <!-- 変化なし -->
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+              変化なし
+            </span>
+            <span class="text-xs text-gray-400">2026年4月10日（木）07:00</span>
+            <span class="text-xs text-gray-400">— Bot沈黙（送信なし）</span>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+              変化なし
+            </span>
+            <span class="text-xs text-gray-400">2026年4月9日（水）07:00</span>
+            <span class="text-xs text-gray-400">— Bot沈黙（送信なし）</span>
+          </div>
+        </div>
+
+        <!-- 通知あり -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 text-xs font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                変化あり
+              </span>
+              <span class="text-xs text-gray-400">2026年4月8日（火）07:00</span>
+            </div>
+            <span class="text-xs font-semibold text-gray-700">1件</span>
+          </div>
+          <div class="text-sm">
+            <p class="text-gray-700"><span class="text-red-500 font-medium">【新規】</span> ロスバスタチン錠2.5mg「JG」— 出荷調整対象</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+              変化なし
+            </span>
+            <span class="text-xs text-gray-400">2026年4月7日（月）07:00</span>
+            <span class="text-xs text-gray-400">— Bot沈黙（送信なし）</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    function switchTab(name) {
+      ['items', 'bot', 'history'].forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        const content = document.getElementById('tab-content-' + t);
+        if (t === name) {
+          btn.className = 'tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-gray-900 text-gray-900 -mb-px';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-800 -mb-px';
+          content.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
