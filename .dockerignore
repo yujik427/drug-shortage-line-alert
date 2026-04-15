@@ -1,0 +1,8 @@
+node_modules
+.env
+credentials/
+data/
+.git
+.gitignore
+*.command
+mockup-*.html

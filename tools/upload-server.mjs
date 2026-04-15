@@ -72,6 +72,8 @@ async function handleUpload(req, res) {
 
   const nameIdx = findColumn(headers, ["品目名", "品名", "薬品名", "医薬品名", "名称"]);
   const yjIdx = findColumn(headers, ["YJコード", "YJ", "YJcode", "薬価コード"]);
+  const stockIdx = findColumn(headers, ["在庫数", "在庫", "現在庫", "数量", "在庫量"]);
+  const usageIdx = findColumn(headers, ["月間出庫数", "出庫数", "払出数", "使用量", "消費量", "出庫", "払出"]);
 
   if (nameIdx < 0) {
     res.writeHead(400, { "Content-Type": "application/json" });
@@ -87,12 +89,14 @@ async function handleUpload(req, res) {
   const sheetRows = rows.map((row) => [
     row[nameIdx] || "",
     yjIdx >= 0 ? row[yjIdx] || "" : "",
+    stockIdx >= 0 ? row[stockIdx] || "" : "",
+    usageIdx >= 0 ? row[usageIdx] || "" : "",
     today,
   ]);
 
   try {
     if (mode === "replace") {
-      const allRows = [["品目名", "YJコード", "登録日"], ...sheetRows];
+      const allRows = [["品目名", "YJコード", "在庫数", "月間出庫数", "登録日"], ...sheetRows];
       await writeSheet(SHEET_NAME, allRows);
     } else {
       await appendRows(SHEET_NAME, sheetRows);

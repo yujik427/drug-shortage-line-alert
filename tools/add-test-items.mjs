@@ -12,10 +12,10 @@ async function main() {
   const today = new Date().toISOString().split("T")[0];
 
   await writeSheet(SHEET_NAME, [
-    ["品目名", "YJコード", "登録日"],
-    ["アムロジピンＯＤ錠5mg「サワイ」", "2171022F5039", today],
-    ["メトホルミン錠250mgMT「DSPB」", "3962001F1164", today],
-    ["ロスバスタチン", "", today],
+    ["品目名", "YJコード", "在庫数", "月間出庫数", "登録日"],
+    ["アムロジピンＯＤ錠5mg「サワイ」", "2171022F5039", "", "", today],
+    ["メトホルミン錠250mgMT「DSPB」", "3962001F1164", "", "", today],
+    ["ロスバスタチン", "", "", "", today],
   ]);
 
   console.log("テスト用の在庫品目を3件登録しました");

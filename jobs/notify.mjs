@@ -30,14 +30,14 @@ async function main() {
     for (let i = 1; i < itemRows.length; i++) {
       const name = (itemRows[i][0] || "").trim();
       const yjCode = (itemRows[i][1] || "").trim();
-      const regDate = (itemRows[i][2] || "").trim();
+      // C=在庫数, D=月間出庫数 はここでは使わない（scheduler側で参照）
+      const regDate = (itemRows[i][4] || "").trim();
 
       if (!name && !yjCode) continue;
       registeredItems.push({ name, yjCode });
 
-      // 登録日が空なら自動で今日の日付を書き込む
       if (!regDate) {
-        await updateCell(ITEMS_SHEET, `C${i + 1}`, today);
+        await updateCell(ITEMS_SHEET, `E${i + 1}`, today);
       }
     }
   }

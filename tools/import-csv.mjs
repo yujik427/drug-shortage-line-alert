@@ -49,8 +49,8 @@ async function main() {
     console.log("  --replace  既存の品目をすべて置き換える（省略時は追加）");
     console.log("");
     console.log("CSVの形式（ヘッダー行必須）:");
-    console.log("  品目名,YJコード");
-    console.log("  アムロジピン錠5mg「サワイ」,2171022F1243");
+    console.log("  品目名,YJコード,在庫数,月間出庫数");
+    console.log("  アムロジピン錠5mg「サワイ」,2171022F1243,500,120");
     process.exit(1);
   }
 
@@ -64,6 +64,8 @@ async function main() {
 
   const nameIdx = findColumn(headers, ["品目名", "品名", "薬品名", "医薬品名", "名称"]);
   const yjIdx = findColumn(headers, ["YJコード", "YJ", "YJcode", "薬価コード"]);
+  const stockIdx = findColumn(headers, ["在庫数", "在庫", "現在庫", "数量", "在庫量"]);
+  const usageIdx = findColumn(headers, ["月間出庫数", "出庫数", "払出数", "使用量", "消費量", "出庫", "払出"]);
 
   if (nameIdx < 0) {
     console.error("品目名の列が見つかりません。ヘッダーに「品目名」「品名」「薬品名」のいずれかを含めてください");
@@ -78,16 +80,20 @@ async function main() {
   } else {
     console.log("  YJコードの列: なし（品名照合になります）");
   }
+  if (stockIdx >= 0) console.log(`  在庫数の列: ${headers[stockIdx]}（${stockIdx + 1}列目）`);
+  if (usageIdx >= 0) console.log(`  月間出庫数の列: ${headers[usageIdx]}（${usageIdx + 1}列目）`);
 
   const today = new Date().toISOString().split("T")[0];
   const sheetRows = rows.map((row) => [
     row[nameIdx] || "",
     yjIdx >= 0 ? (row[yjIdx] || "") : "",
+    stockIdx >= 0 ? (row[stockIdx] || "") : "",
+    usageIdx >= 0 ? (row[usageIdx] || "") : "",
     today,
   ]);
 
   if (replaceMode) {
-    const allRows = [["品目名", "YJコード", "登録日"], ...sheetRows];
+    const allRows = [["品目名", "YJコード", "在庫数", "月間出庫数", "登録日"], ...sheetRows];
     await writeSheet(SHEET_NAME, allRows);
     console.log(`\n${sheetRows.length}件を在庫品目シートに登録しました（既存データは置き換え）`);
   } else {

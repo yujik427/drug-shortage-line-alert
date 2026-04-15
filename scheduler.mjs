@@ -50,11 +50,11 @@ function runJob(scriptPath, jobName) {
 
 cron.schedule("0 0 * * *", () => {
   runJob(join(__dirname, "jobs", "collect.mjs"), "出荷調整情報の収集");
-});
+}, { timezone: "Asia/Tokyo" });
 
 cron.schedule("0 7 * * *", () => {
   runJob(join(__dirname, "jobs", "notify.mjs"), "差分チェック・LINE通知");
-});
+}, { timezone: "Asia/Tokyo" });
 
 // ─── CSVアップロードサーバー ───
 
@@ -388,6 +388,17 @@ const server = createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/api/today") return handleToday(req, res);
   if (req.method === "GET" && req.url === "/api/items") return handleItems(req, res);
   if (req.method === "POST" && req.url === "/api/upload") return handleUpload(req, res);
+
+  if (req.method === "GET" && req.url === "/health") {
+    try {
+      const rows = await readSheet(ITEMS_SHEET);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ status: "ok", sheets: "connected", items: Math.max(0, rows.length - 1), uptime: process.uptime() }));
+    } catch (err) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ status: "degraded", sheets: "error", error: err.message, uptime: process.uptime() }));
+    }
+  }
 
   res.writeHead(404);
   res.end("Not Found");
