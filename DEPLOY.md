@@ -1,23 +1,35 @@
-# デプロイ手順（Railway）
+# デプロイ手順（Render）
+
+## 現在の本番環境
+
+- URL: https://drug-shortage-line-alert.onrender.com
+- プラン: **Starter（$7/月）**
+- リージョン: Oregon (US West)
+- ブランチ: `master`
+- ビルド: Node.js（自動検出）
 
 ## 前提条件
 
-- GitHubリポジトリにプッシュ済みであること
-- Railwayアカウントがあること（https://railway.app）
+- GitHubリポジトリ（`yujik427/drug-shortage-line-alert`）にプッシュ済みであること
+- Renderアカウントがあること（https://dashboard.render.com）
 - Google OAuth トークンが取得済みであること（ローカルで `npm run auth` 完了済み）
 
-## 手順
+## 初回セットアップ（済み）
 
-### 1. Railwayプロジェクト作成
+1. https://dashboard.render.com でログイン
+2. 「New」→「Web Service」→ GitHubリポジトリを接続
+3. 以下を設定:
+   - Name: `drug-shortage-line-alert`
+   - Region: Oregon (US West)
+   - Branch: `master`
+   - Runtime: Node
+   - Build Command: `npm install`
+   - Start Command: `node scheduler.mjs`
+   - Instance Type: **Starter**（常時起動が必須。Freeはcronが動かない）
 
-1. https://railway.app でログイン
-2. 「New Project」→「Deploy from GitHub repo」
-3. `drug-shortage-line-alert` リポジトリを選択
-4. Dockerfileが自動検出される
+## 環境変数
 
-### 2. 環境変数の設定
-
-Railway の「Variables」タブで以下を設定する。
+Renderの「Environment」タブで以下を設定する。
 
 | 変数 | 値 | 備考 |
 |------|-----|------|
@@ -28,51 +40,79 @@ Railway の「Variables」タブで以下を設定する。
 | `LINE_CHANNEL_ACCESS_TOKEN` | LINE Developers から取得 | 必須 |
 | `LINE_CHANNEL_SECRET` | LINE Developers から取得 | 必須 |
 | `LINE_GROUP_ID` | Webhook経由で取得済みのもの | 必須 |
-| `DASHBOARD_URL` | Railwayが発行するURL（デプロイ後に設定） | 任意 |
-| `TZ` | `Asia/Tokyo` | 推奨 |
+| `DASHBOARD_URL` | `https://drug-shortage-line-alert.onrender.com` | 任意（LINE通知のリンクに使用） |
 
-### 3. デプロイ確認
+## デプロイ方法
 
-1. Railwayがビルド・デプロイを自動実行
-2. デプロイ完了後、発行されたURLにアクセス
-3. `/health` エンドポイントで稼働確認
+### 自動デプロイ（通常）
+
+`master` ブランチにプッシュすると、Renderが自動でビルド・デプロイする。
 
 ```bash
-curl https://<railway-url>/health
+git push origin master
 ```
 
-正常時のレスポンス:
+ビルド完了まで1〜3分。Renderダッシュボードの「Events」タブで進捗を確認できる。
+
+### 手動デプロイ
+
+Renderダッシュボードで「Manual Deploy」→「Deploy latest commit」をクリック。
+
+## デプロイ後の確認
+
+```bash
+curl https://drug-shortage-line-alert.onrender.com/health
+```
+
+正常時:
 ```json
-{"status":"ok","sheets":"connected","items":42,"uptime":123.456}
+{"status":"ok","sheets":"connected","items":516,"uptime":123.456}
 ```
 
-### 4. DASHBOARD_URL の更新
+異常時（503）:
+```json
+{"status":"degraded","sheets":"error","error":"...","uptime":123.456}
+```
 
-1. Railwayが発行したURLを `DASHBOARD_URL` 環境変数にセット
-2. LINE通知内のリンクがこのURLを指すようになる
-
-### 5. 動作確認チェックリスト
+### チェックリスト
 
 - [ ] `/health` が `status: ok` を返す
 - [ ] `/api/status` が在庫品目数を返す
 - [ ] `/api/today` が今日の変化を返す
 - [ ] 管理画面（`/`）が表示される
 - [ ] CSVアップロードが動作する
-- [ ] 翌朝の通知が届く（翌日確認）
+- [ ] 翌朝7:00 JSTに通知が届く（翌日確認）
+
+## ヘルスチェック設定
+
+Renderダッシュボード → Settings → Health Checks で以下を設定する。
+
+- Path: `/health`
+- 200が返ればOK、503が返れば異常
 
 ## トラブルシューティング
 
 ### Google Sheets API エラー
 
 - `GOOGLE_TOKENS_JSON` が正しくペーストされているか確認
-- トークンが期限切れの場合はローカルで `npm run auth` を再実行し、新しいトークンを環境変数に貼り直す
+- トークンが期限切れの場合はローカルで `npm run auth` を再実行し、Renderの環境変数に新しいトークンを貼り直す
 
-### cron が JST で動かない
+### 通知が7:00 JSTに届かない
 
-- `TZ=Asia/Tokyo` が環境変数に設定されているか確認
-- `scheduler.mjs` のcronスケジュールに `timezone: "Asia/Tokyo"` が指定済み（二重対策）
+- `scheduler.mjs` のcronに `timezone: "Asia/Tokyo"` が指定されているか確認
+- Renderのログ（Dashboard → Logs）でcron発火のタイムスタンプを確認
 
 ### ヘルスチェック失敗
 
 - `/health` が 503 を返す場合、Google Sheets API との接続に問題がある
-- Railwayのログで具体的なエラーメッセージを確認する
+- Renderダッシュボードの「Logs」タブで具体的なエラーメッセージを確認
+
+### プロセスがスリープする
+
+- Instance Typeが「Free」になっていないか確認
+- 「Starter」以上でないとcronが動かない（15分でスリープするため）
+
+## 注意事項
+
+- **Freeプランに絶対にしないこと。** node-cronはプロセス常駐が前提。スリープすると毎日の通知が届かなくなる
+- Dockerfileはリポジトリに含まれているが、現在のRenderはNode.jsネイティブビルドを使用。Dockerビルドに切り替える場合はSettings → Build & Deploy で変更する
