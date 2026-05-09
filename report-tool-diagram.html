@@ -124,6 +124,96 @@
       font-weight: 900;
     }
 
+    .screen-lead {
+      margin: -6px 0 22px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .screen-flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .flow-step {
+      position: relative;
+      padding: 16px 14px;
+      border-radius: 18px;
+      background: #fff;
+      text-align: center;
+      font-weight: 900;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.22);
+    }
+
+    .flow-step::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      color: var(--green);
+      font-size: 22px;
+      transform: translateY(-50%);
+    }
+
+    .flow-step:last-child::after {
+      display: none;
+    }
+
+    .flow-step span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--green-dark);
+      font-size: 13px;
+    }
+
+    .screen-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .screen-card {
+      overflow: hidden;
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.22);
+    }
+
+    .screen-card.wide {
+      grid-column: 1 / -1;
+    }
+
+    .screen-copy {
+      padding: 20px 22px;
+    }
+
+    .screen-copy h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      line-height: 1.35;
+    }
+
+    .screen-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .screen-shot {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-top: 1px solid rgba(148, 163, 184, 0.22);
+    }
+
+    .screen-card.wide .screen-shot {
+      max-height: 460px;
+      object-fit: cover;
+      object-position: top center;
+    }
+
     .big-flow {
       display: grid;
       grid-template-columns: 1fr 92px 1.1fr 92px 1fr;
@@ -503,6 +593,15 @@
         grid-template-columns: repeat(2, 1fr);
       }
 
+      .screen-flow,
+      .screen-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-step::after {
+        display: none;
+      }
+
       .part-card::after {
         display: none;
       }
@@ -522,6 +621,8 @@
 
       .compare,
       .parts,
+      .screen-flow,
+      .screen-grid,
       .outcomes,
       .sheet-grid {
         grid-template-columns: 1fr;
@@ -543,7 +644,62 @@
     </section>
 
     <section class="section">
-      <h2 class="section-title"><span class="num">01</span> データ入力を自動化する工夫</h2>
+      <h2 class="section-title"><span class="num">01</span> 報告ツールの画面</h2>
+      <p class="screen-lead">先に実際の画面を見せて、「CSVを入れる → データを保存する → 在庫への影響を見る → LINEで届く」という流れを説明します。</p>
+
+      <div class="screen-flow">
+        <div class="flow-step"><span>1</span>CSVを入れる</div>
+        <div class="flow-step"><span>2</span>DBに保存</div>
+        <div class="flow-step"><span>3</span>全品目を確認</div>
+        <div class="flow-step"><span>4</span>要発注を確認</div>
+        <div class="flow-step"><span>5</span>LINEで通知</div>
+      </div>
+
+      <div class="screen-grid">
+        <article class="screen-card">
+          <div class="screen-copy">
+            <h3>CSVインポート</h3>
+            <p>薬局の在庫品目CSVをドラッグ&ドロップで取り込みます。YJコードがないCSVにも対応できるようにしています。</p>
+          </div>
+          <img class="screen-shot" src="assets/tool-csv-import.png" alt="CSVインポート画面" />
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-copy">
+            <h3>出荷調整DB</h3>
+            <p>厚労省Excelから必要な列を読み取り、ステータス・変化種別・YJコードなどをスプレッドシートに自動記録します。</p>
+          </div>
+          <img class="screen-shot" src="assets/tool-spreadsheet-db.png" alt="出荷調整DBのスプレッドシート画面" />
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-copy">
+            <h3>全品目一覧</h3>
+            <p>供給停止・限定出荷・正常出荷を一覧で確認できます。検索や出荷調整中のみの絞り込みにも対応しています。</p>
+          </div>
+          <img class="screen-shot" src="assets/tool-all-items.png" alt="全品目一覧画面" />
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-copy">
+            <h3>要発注</h3>
+            <p>在庫数と月間出庫数から、すぐ発注・早めに検討が必要な品目を優先して確認できます。</p>
+          </div>
+          <img class="screen-shot" src="assets/tool-order.png" alt="要発注画面" />
+        </article>
+
+        <article class="screen-card wide">
+          <div class="screen-copy">
+            <h3>LINE通知</h3>
+            <p>変化があった時だけ、チームのLINEグループへ通知します。確認リンクから管理画面へすぐ移動できます。</p>
+          </div>
+          <img class="screen-shot" src="assets/tool-line-notification.png" alt="LINE通知画面" />
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title"><span class="num">02</span> データ入力を自動化する工夫</h2>
       <div class="big-flow">
         <div class="source-stack">
           <div class="node blue">
@@ -584,7 +740,7 @@
     </section>
 
     <section class="section">
-      <h2 class="section-title"><span class="num">02</span> 4つのパーツの決め方</h2>
+      <h2 class="section-title"><span class="num">03</span> 4つのパーツの決め方</h2>
       <div class="parts">
         <div class="part-card">
           <span class="part-label">いつ</span>
@@ -615,7 +771,7 @@
     </section>
 
     <section class="section">
-      <h2 class="section-title"><span class="num">03</span> 通知設計の工夫</h2>
+      <h2 class="section-title"><span class="num">04</span> 通知設計の工夫</h2>
       <div class="compare">
         <div class="compare-card bad">
           <h3>ありがちな通知ツール</h3>
@@ -637,7 +793,7 @@
     </section>
 
     <section class="section">
-      <h2 class="section-title"><span class="num">04</span> 照合ロジックの工夫</h2>
+      <h2 class="section-title"><span class="num">05</span> 照合ロジックの工夫</h2>
       <div class="matching">
         <div class="node blue">
           <div class="icon">💊</div>
@@ -665,7 +821,7 @@
     </section>
 
     <section class="section">
-      <h2 class="section-title"><span class="num">05</span> ぶつかった課題と解決方法</h2>
+      <h2 class="section-title"><span class="num">06</span> ぶつかった課題と解決方法</h2>
       <div class="challenges">
         <div class="challenge-card">
           <div class="problem">

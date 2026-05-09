@@ -373,6 +373,13 @@ async function handleItems(req, res) {
 
 const htmlPath = join(__dirname, "dashboard.html");
 const reportDiagramPath = join(__dirname, "report-tool-diagram.html");
+const reportAssets = new Map([
+  ["/assets/tool-all-items.png", "tool-all-items.png"],
+  ["/assets/tool-order.png", "tool-order.png"],
+  ["/assets/tool-csv-import.png", "tool-csv-import.png"],
+  ["/assets/tool-spreadsheet-db.png", "tool-spreadsheet-db.png"],
+  ["/assets/tool-line-notification.png", "tool-line-notification.png"],
+]);
 
 const server = createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -391,6 +398,12 @@ const server = createServer(async (req, res) => {
     const html = readFileSync(reportDiagramPath, "utf-8");
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     return res.end(html);
+  }
+
+  if (req.method === "GET" && reportAssets.has(req.url)) {
+    const image = readFileSync(join(__dirname, "assets", reportAssets.get(req.url)));
+    res.writeHead(200, { "Content-Type": "image/png" });
+    return res.end(image);
   }
 
   if (req.method === "GET" && req.url === "/api/status") return handleStatus(req, res);
