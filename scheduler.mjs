@@ -48,13 +48,14 @@ function runJob(scriptPath, jobName) {
   });
 }
 
-cron.schedule("0 0 * * *", () => {
-  runJob(join(__dirname, "jobs", "collect.mjs"), "出荷調整情報の収集");
-}, { timezone: "Asia/Tokyo" });
+// cron無効化中（手動実行のみ）
+// cron.schedule("0 0 * * *", () => {
+//   runJob(join(__dirname, "jobs", "collect.mjs"), "出荷調整情報の収集");
+// }, { timezone: "Asia/Tokyo" });
 
-cron.schedule("0 7 * * *", () => {
-  runJob(join(__dirname, "jobs", "notify.mjs"), "差分チェック・LINE通知");
-}, { timezone: "Asia/Tokyo" });
+// cron.schedule("0 7 * * *", () => {
+//   runJob(join(__dirname, "jobs", "notify.mjs"), "差分チェック・LINE通知");
+// }, { timezone: "Asia/Tokyo" });
 
 // ─── CSVアップロードサーバー ───
 
