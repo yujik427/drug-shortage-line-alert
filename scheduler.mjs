@@ -372,6 +372,7 @@ async function handleItems(req, res) {
 }
 
 const htmlPath = join(__dirname, "dashboard.html");
+const reportDiagramPath = join(__dirname, "report-tool-diagram.html");
 
 const server = createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -385,6 +386,13 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     return res.end(html);
   }
+
+  if (req.method === "GET" && req.url === "/report-tool-diagram.html") {
+    const html = readFileSync(reportDiagramPath, "utf-8");
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    return res.end(html);
+  }
+
   if (req.method === "GET" && req.url === "/api/status") return handleStatus(req, res);
   if (req.method === "GET" && req.url === "/api/today") return handleToday(req, res);
   if (req.method === "GET" && req.url === "/api/items") return handleItems(req, res);
