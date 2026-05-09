@@ -17,7 +17,7 @@ import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import cron from "node-cron";
-import { readSheet, writeSheet, appendRows } from "./lib/sheets.mjs";
+import { readSheet, writeSheet, appendRows, getAuthMode } from "./lib/sheets.mjs";
 import { cleanStatus, cleanVolume, cleanReason, cleanProspect } from "./lib/line.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -393,10 +393,22 @@ const server = createServer(async (req, res) => {
     try {
       const rows = await readSheet(ITEMS_SHEET);
       res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ status: "ok", sheets: "connected", items: Math.max(0, rows.length - 1), uptime: process.uptime() }));
+      return res.end(JSON.stringify({
+        status: "ok",
+        sheets: "connected",
+        auth: getAuthMode(),
+        items: Math.max(0, rows.length - 1),
+        uptime: process.uptime(),
+      }));
     } catch (err) {
       res.writeHead(503, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ status: "degraded", sheets: "error", error: err.message, uptime: process.uptime() }));
+      return res.end(JSON.stringify({
+        status: "degraded",
+        sheets: "error",
+        auth: getAuthMode(),
+        error: err.message,
+        uptime: process.uptime(),
+      }));
     }
   }
 
