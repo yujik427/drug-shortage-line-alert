@@ -36,11 +36,23 @@ Renderの「Environment」タブで以下を設定する。
 | `GOOGLE_CLIENT_ID` | GCPコンソールから取得 | 必須 |
 | `GOOGLE_CLIENT_SECRET` | GCPコンソールから取得 | 必須 |
 | `GOOGLE_TOKENS_JSON` | `credentials/tokens.json` の中身をそのままペースト | 必須（ファイルの代わり） |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | サービスアカウント鍵(JSON)の中身をそのままペースト | **推奨（期限切れしない）** |
 | `SPREADSHEET_ID` | スプレッドシートURLの `/d/XXXXX/edit` 部分 | 必須 |
 | `LINE_CHANNEL_ACCESS_TOKEN` | LINE Developers から取得 | 必須 |
 | `LINE_CHANNEL_SECRET` | LINE Developers から取得 | 必須 |
 | `LINE_GROUP_ID` | Webhook経由で取得済みのもの | 必須 |
 | `DASHBOARD_URL` | `https://drug-shortage-line-alert.onrender.com` | 任意（LINE通知のリンクに使用） |
+
+> 補足: `GOOGLE_SERVICE_ACCOUNT_JSON` が設定されている場合は、OAuthトークンより優先して利用します（invalid_grant 対策）。
+
+## 推奨: Service Account に切り替えて安定化
+
+OAuthトークンは失効（`invalid_grant`）で停止しやすいため、常時稼働環境では Service Account を推奨します。
+
+1. GCPでサービスアカウントを作成 → 鍵（JSON）を発行
+2. スプレッドシートをサービスアカウントの `client_email` に **編集権限で共有**
+3. Renderの環境変数 `GOOGLE_SERVICE_ACCOUNT_JSON` に鍵JSONを貼り付け
+4. Renderで再デプロイ（Manual DeployでもOK）
 
 ## デプロイ方法
 
