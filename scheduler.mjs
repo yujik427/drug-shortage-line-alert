@@ -374,6 +374,7 @@ async function handleItems(req, res) {
 const htmlPath = join(__dirname, "dashboard.html");
 const reportDiagramPath = join(__dirname, "report-tool-diagram.html");
 const reportAssets = new Map([
+  ["/assets/tool-mhlw-source.png", "tool-mhlw-source.png"],
   ["/assets/tool-all-items.png", "tool-all-items.png"],
   ["/assets/tool-order.png", "tool-order.png"],
   ["/assets/tool-csv-import.png", "tool-csv-import.png"],
